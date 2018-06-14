@@ -10,10 +10,10 @@ require 'uri'
 require 'yaml'
 require 'net/https'
 
- GITHUB_API = "https://api.github.com/repos/nomlab/nompedia/issues"
- #GITHUB_API = "https://api.github.com/repos/yoshida-shu/SYBot/issues"##for test
+GITHUB_API = "https://api.github.com/repos/nomlab/nompedia/issues"
+#GITHUB_API = "https://api.github.com/repos/yoshida-shu/SYBot/issues"##for test
 
-  module SYBot
+module SYBot
 
   def issue_respond(params,options = {})
     return nil if params[:user_name] == "slackbot" || params[:user_id] == "USLACKBOT"
@@ -60,7 +60,6 @@ require 'net/https'
           if err == nil
             ret = {:text => "created"}.merge(options).to_json
           else
-            p "hay!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             ret = {:text => ("creation faild:" + err)}.merge(options).to_json
           end
         end
@@ -113,69 +112,67 @@ require 'net/https'
     titles << url << "\|" << label << "\>"
     return titles
   end
-  
-  def git_webhook_respond(params,options = {})
-      if params["action"] == nil then
-        ret = {:text => "Faild to get action"}.merge(options).to_json
+
+  def git_webhook_respond(payloads,options = {})
+    params = JSON.parse(payloads[:payload])
+    if (params == nil || params == {})then
+      ret = {:text => "Faild to get action"}.merge(options).to_json
+    else
+      act = params["action"]
+      repository_name = params["repository"]["name"] || "None"
+      repository_url = params["repository"]["html_url"] || "None"
+      issue_title = params["issue"]["title"] || "None"
+      issue_url = params["issue"]["html_url"] || "None"
+      issues_url = repository_url << "\/issues" || "None"
+      user_name = params["issue"]["user"]["login"] || "None"
+      assignee = params["issue"]["assignee"] || "None"
+
+      text_hedder = "\<" << issues_url << "\|\*issues\*\>\n"
+      ret_txt = text_hedder << "\n"
+
+      case act
+      when "opened" then
+        ret_txt = make_link(repository_url,repository_name) << "\:"
+        ret_txt << user_name << "によって， \*issue\*\: "
+        ret_txt << make_link(issue_url,issue_title) << "が作成されました．"
+      when "reopened" then
+        ret_txt = make_link(repository_url,repository_name) << "\:"
+        ret_txt << user_name << "によって， \*issue\*\:"
+        ret_txt << make_link(issue_url,issue_title) << "が再び開かれました．"
+      when "closed" then
+        ret_txt = make_link(repository_url,repository_name) << "\:"
+        ret_txt << user_name << "によって， \*issue\*\:"
+        ret_txt << make_link(issue_url,issue_title) << "が閉鎖されました．"
+      when "assigned" then
+        ret_txt = make_link(repository_url,repository_name) << "\:"
+        ret_txt << user_name << "によって，"
+        ret_txt << user_name << "に \*issue\*\:"
+        ret_txt << make_link(issue_url,issue_title) << "が割り当てられました．"
+      when "unassigned" then
+        ret_txt = make_link(repository_url,repository_name) << "\:"
+        ret_txt << user_name << "によって，"
+        ret_txt << user_name << "が \*issue\*\:"
+        ret_txt << make_link(issue_url,issue_title) << "の担当から外されました．"
+      when "edited" then
+        ret_txt = make_link(repository_url,repository_name) << "\:"
+        ret_txt << user_name << "によって， \*issue\*\:"
+        ret_txt << make_link(issue_url,issue_title) << "が編集されました．"
       else
-#params は IndifferentHash で，最も上の階層のvalueの型がStringであるため，eval で Hash に直しています．
-        issue_h =  eval(params[:issue])
-        repo_h = eval(params[:repository])
-        act = params["action"]
-        repository_name = repo_h["name"] || "None"
-        repository_url = repo_h["html_url"] || "None"
-        issue_title = issue_h["title"] || "None"
-        issue_url = issue_h["html_url"] || "None"
-        issues_url = repository_url << "\/issues" || "None"
-        user_name = issue_h["user"]["login"] || "None"
-        assignee = issue_h["user"]["assignee"] || "None"
-
-        text_hedder = "\<" << issues_url << "\|\*issues\*\>\n"
-        ret_txt = text_hedder << "\n"
-
-        case act
-        when "opened" then
-            ret_txt = make_link(repository_url,repository_name) << "\:" 
-            ret_txt << user_name << "によって， \*issue\*\: " 
-            ret_txt << make_link(issue_url,issue_title) << "が作成されました．"
-        when "reopened" then
-            ret_txt = make_link(repository_url,repository_name) << "\:" 
-            ret_txt << user_name << "によって， \*issue\*\:" 
-            ret_txt << make_link(issue_url,issue_title) << "が再び開かれました．"
-        when "closed" then
-            ret_txt = make_link(repository_url,repository_name) << "\:" 
-            ret_txt << user_name << "によって， \*issue\*\:" 
-            ret_txt << make_link(issue_url,issue_title) << "が閉鎖されました．"
-        when "assigned" then
-            ret_txt = make_link(repository_url,repository_name) << "\:" 
-            ret_txt << user_name << "によって，" 
-            ret_txt << user_name << "に \*issue\*\:"
-            ret_txt << make_link(issue_url,issue_title) << "が割り当てられました．"
-        when "unassigned" then
-            ret_txt = make_link(repository_url,repository_name) << "\:" 
-            ret_txt << user_name << "によって，" 
-            ret_txt << user_name << "が \*issue\*\:"
-            ret_txt << make_link(issue_url,issue_title) << "の担当から外されました．"
-        when "edited" then
-            ret_txt = make_link(repository_url,repository_name) << "\:" 
-            ret_txt << user_name << "によって， \*issue\*\:" 
-            ret_txt << make_link(issue_url,issue_title) << "が編集されました．"
-        else
-            ret_txt = nil
-        end
+        ret_txt = nil
       end
-        ret = {:text => ret_txt}.merge(options).to_json
-        https_post(@slack_incoming_webhook,ret)
-        return ret
-   end
+    end
+    ret = {:text => ret_txt}.merge(options).to_json
+    https_post(@slack_incoming_webhook,ret)
+    return ret
+  end
 
-   def https_post(url,json_data)
-        uri = URI.parse(url)
-        request = Net::HTTP::Post.new(uri)
-        request.body = json_data
-        req_options = {use_ssl: uri.scheme == "https"}
-        response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
-        http.request(request)
-        end
-   end
+  def https_post(url,json_data)
+    uri = URI.parse(url)
+    request = Net::HTTP::Post.new(uri)
+    request.body = json_data
+    req_options = {use_ssl: uri.scheme == "https"}
+    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+      http.request(request)
+    end
+  end
 end
