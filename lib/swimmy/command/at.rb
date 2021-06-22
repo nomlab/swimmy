@@ -24,7 +24,7 @@ module Swimmy
           end
 
         else
-          client.say(channel: data.channel, text: help_message("say"))
+          client.say(channel: data.channel, text: help_message("at"))
         end
       end
 
