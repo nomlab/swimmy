@@ -38,14 +38,10 @@ module Swimmy
         puts "at command..."
         now = DateTime.now
 
-        COMMAND_SCHEDULE.delete_if do |elem|
-          p (elem[:date])
-          p (elem[:channel]) 
-          p (elem[:text])
-          p (elem[:user])
-
+        COMMAND_SCHEDULE.each do |elem|
           if elem[:date] <= now
             puts "at command sending message..."
+            client.say(channel: elem[:channel], text: "at コマンドによるコマンド実行です．")
             text = 'swimmy ' + elem[:text]
             SlackRubyBot::Hooks::Message.new.call(
             client,
