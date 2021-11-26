@@ -1,113 +1,216 @@
 #!/bin/bash
 
 #This script only works under below conditions
-# 1. finish to install and set up sheetq
-# 2. environmental variable is written to "swimmy/.env"
-# 3. Docker is installed
+# 1. Docker is installed
 
-function usage(){
-cat <<_EOT_
-swimmy-docker.sh
+# default value
+DEFAULT_ATTACH_OPTION=it # {i|t|it|d}
+DEFAULT_PORT=3000 # host port which jay server binds
+DEFAULT_COMMAND="" # command which execute in container
+                   # using default entrypoint of image, specify ""
+
+# constant value
+IMAGE_NAME=swimmy
+CONTAINER_NAME=swimmy
+SCRIPT_NAME=swimmy-docker.sh
+
+function print_usage(){
+    cat <<_EOT_
+launch-docker.sh
 
 Usage:
-    $0 Option
+    $SCRIPT_NAME COMMAND
 
 Description:
-    start and stop swimmy on container
+    start and stop $IMAGE_NAME on container
+
+Commands:
+    start    start $IMAGE_NAME server on container
+             for more details, run '$SCRIPT_NAME start -h'
+    stop     stop $IMAGE_NAME server
+    status   show conditions of $IMAGE_NAME container
+    restart  restart $IMAGE_NAME container
+    help     show this usage
+_EOT_
+}
+
+function print_start_usage(){
+    cat <<_EOT_
+Usage:
+    $SCRIPT_NAME start [OPTION] [COMMAND]
+
+Description:
+    run $IMAGE_NAME server on docker container
+    if cpmmand is specified, run COMMAND instead of dafault entrypoint
 
 Options:
-    start     start swimmy on container
-    stop      stop swimmy
-    status    show swimmy's condition
-    help      show this usage
+    -d         dettach: input and output is discarded
+    -p number  port: bind 'number' port (default 3000)
+    -h         help: show this usage
 _EOT_
 }
 
 function main(){
-    if ! user_is_member_of_dockergroup; then
-        echo "You have to be member of docker group"
+    if ! user_belongs_dockergroup; then
+        echo "$(whoami) must belong 'docker' group"
         exit 1
     fi
 
     cd "$(dirname "$0")"
 
-    case "$1" in
+    subcommand=$1
+    shift
+
+    case $subcommand in
         start)
-            start
-        ;;
+            start $@
+            ;;
         stop)
             stop
-        ;;
+            ;;
         status)
             status
-        ;;
+            ;;
+        restart)
+            restart $@
+            ;;
         help)
-            usage
-        ;;
+            print_usage
+            ;;
+        "")
+            print_usage
+            ;;
         *)
-            echo "Invalid option" >&2
-            usage >&2
+            echo "Invalid option: '$1'"
             exit 1
-        ;;
+            ;;
     esac
     return 0
 }
 
-function user_is_member_of_dockergroup(){
-    res=$(groups | grep -c -e docker -e root)
-    if [ $res = 0 ]; then
-        return 1
+function start(){
+    PORT=$DEFAULT_PORT
+    COMMAND=$DEFAULT_COMMAND
+    ATTACH_OPTION=$DEFAULT_ATTACH_OPTION
+    set_start_options $@
+
+    if container_is_running $CONTAINER_NAME; then
+        echo "$CONTAINER_NAME is already runnning"
+        exit 1
     fi
-    return 0
+
+    if ! image_exists; then
+        echo "docker image not found: $IMAGE_NAME"
+        exit 1
+    fi
+
+    if ! istty; then
+        ATTACH_OPTION=i
+    fi
+
+    if port_is_used; then
+        echo "Port $PORT is used"
+        exit 1
+    fi
+
+    echo "starting $CONTAINER_NAME"
+    docker run \
+        -$ATTACH_OPTION \
+        -p $PORT:3000 \
+        -v $HOME/.config/sheetq:/root/.config/sheetq \
+        --rm \
+        --name $CONTAINER_NAME \
+        $IMAGE_NAME $COMMAND
 }
 
-function start(){
-    if is_container_running swimmy; then
-        echo "swimmy has already started"
-    else
-        echo -n "try to start swimmy..."
-        docker run -d --name swimmy \
-            -v $PWD/.env:/root/swimmy/.env \
-            -v $HOME/.config/sheetq/:/root/.config/sheetq \
-            swimmy >/dev/null
-        if [ $? = 0 ]; then
-            echo "done."
-        else
-            exit 1
-        fi
-    fi
+function set_start_options(){
+    while getopts dhop: OPT; do
+        case $OPT in
+            d)
+                ATTACH_OPTION=d
+                ;;
+            h)
+                print_start_usage
+                exit 0
+                ;;
+            p)
+                PORT=$OPTARG
+                ;;
+            *)
+                exit 1
+                ;;
+        esac
+    done
+    COMMAND=${@:$OPTIND}
 }
 
 function stop(){
-    if is_container_running swimmy; then
-        echo -n "try to stop swimmy..."
-        docker stop swimmy >/dev/null
-        docker rm swimmy >/dev/null
-        if [ $? = 0 ]; then
-            echo "done."
-        else
-            exit 1
-        fi
-    else
-        echo "swimmy is not running"
+    if ! container_is_running; then
+        echo "$CONTAINER_NAME is not running"
+        exit 1
     fi
+
+    echo -n "try to stop $CONTAINER_NAME..."
+    docker stop $CONTAINER_NAME > /dev/null && \
+        echo "done."
 }
 
 function status(){
-    if is_container_running swimmy; then
-        echo "running"
+    if container_is_running; then
+        echo "$CONTAINER_NAME is running"
     else
-        echo "stop"
+        echo "$CONTAINER_NAME is not running"
     fi
 }
 
-function is_container_running(){
-    res=$(docker ps -a --format "table {{.Names}}" |grep -cx "$1")
-    if [ $res = 0 ]; then
+function restart(){
+    if container_is_running; then
+        stop
+        start $@
+    else
+        echo "$CONTAINER_NAME is not runnning"
+        start $@
+    fi
+}
+
+function user_belongs_dockergroup(){
+    if [ $(groups | grep -c -e docker -e root) = 0 ]; then
         return 1
     else
         return 0
     fi
 }
 
-main "$1"
+function container_is_running(){
+    if [ $(docker ps -a --format "table {{.Names}}" |grep -cx "$CONTAINER_NAME") = 0 ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+function image_exists(){
+    if [ $(docker images $IMAGE_NAME | wc -l) = 1 ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+function istty(){
+    if [ "$(tty)" = "not a tty" ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+function port_is_used(){
+    if [ $(ss -antu | grep -c $PORT) != 0 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+main "$@"
