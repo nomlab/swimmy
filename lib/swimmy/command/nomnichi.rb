@@ -7,19 +7,26 @@ module Swimmy
         client.say(channel: data.channel, text: "履歴取得中...")
 
         begin
-          who = WorkHorse.new(spreadsheet).whosnext
+          targets = WorkHorse.new(spreadsheet).nomnichi_targets
         rescue Exception => e
           client.say(channel: data.channel, text: "履歴を取得できませんでした.")
           raise e
         end
 
-        client.say(channel: data.channel, text: "次回のノムニチ担当は，#{who} さんです!")
+        case match[:expression]
+        when nil
+          client.say(channel: data.channel, text: "次回のノムニチ担当は，#{targets.first} さんです!")
+        when 'list'
+          client.say(channel: data.channel, text: "次回以降のノムニチ担当は，以下の通りです!\n#{targets.join("\n")}")
+        else
+          client.say(channel: data.channel, text: help_message("nomnichi"))
+        end
       end
 
       help do
         title "nomnichi"
         desc "次のノムニチ執筆者を教えてくれます"
-        long_desc "次のノムニチ執筆者を教えてくれます．引数はありません．"
+        long_desc "nomnichi list - 次回以降のノムニチ執筆者を教えてくれます．"
       end
 
       ################################################################
@@ -33,8 +40,8 @@ module Swimmy
           @spreadsheet = spreadsheet
         end
 
-        def whosnext
-          whos_next(nomnichi_active_members, fetch_nomnichi_articles)
+        def nomnichi_targets
+          capture_targets(nomnichi_active_members, fetch_nomnichi_articles)
         end
 
         private
@@ -47,7 +54,7 @@ module Swimmy
           Sheetq::Service::Nomnichi.new.fetch
         end
 
-        def whos_next(current_member_account_names, articles)
+        def capture_targets(current_member_account_names, articles)
           epoch = Time.new(1970, 1, 1)
           old_to_new_articles =  articles.sort {|a, b| a.published_on <=> b.published_on}
           latest_published_time = Hash.new
@@ -61,7 +68,7 @@ module Swimmy
             latest_published_time[article.user_name] = article.published_on
           end
 
-          return latest_published_time.sort{|a, b| a[1] <=> b[1]}.first[0]
+          return latest_published_time.sort{|a, b| a[1] <=> b[1]}.map(&:first)
         end
       end
       private_constant :WorkHorse
