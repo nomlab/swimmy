@@ -7,13 +7,13 @@ module Swimmy
         client.say(channel: data.channel, text: "履歴取得中...")
 
         begin
-          who = WorkHorse.new(spreadsheet).whosnext
+          assignees = WorkHorse.new(spreadsheet).whosnext(3)
         rescue Exception => e
           client.say(channel: data.channel, text: "履歴を取得できませんでした.")
           raise e
         end
 
-        client.say(channel: data.channel, text: "次回のノムニチ担当は，#{who} さんです!")
+        client.say(channel: data.channel, text: "次回のノムニチ担当は，#{assignees.join(', ')} さんです!")
       end
 
       help do
@@ -33,8 +33,8 @@ module Swimmy
           @spreadsheet = spreadsheet
         end
 
-        def whosnext
-          whos_next(nomnichi_active_members, fetch_nomnichi_articles)
+        def whosnext(max_candidates = 1)
+          whos_next(nomnichi_active_members, fetch_nomnichi_articles, max_candidates)
         end
 
         private
@@ -47,7 +47,7 @@ module Swimmy
           Sheetq::Service::Nomnichi.new.fetch
         end
 
-        def whos_next(current_member_account_names, articles)
+        def whos_next(current_member_account_names, articles, max_candidates = 1)
           epoch = Time.new(1970, 1, 1)
           old_to_new_articles =  articles.sort {|a, b| a.published_on <=> b.published_on}
           latest_published_time = Hash.new
@@ -61,7 +61,7 @@ module Swimmy
             latest_published_time[article.user_name] = article.published_on
           end
 
-          return latest_published_time.sort{|a, b| a[1] <=> b[1]}.first[0]
+          return latest_published_time.sort{|a, b| a[1] <=> b[1]}.take(max_candidates).map(&:first)
         end
       end
       private_constant :WorkHorse
