@@ -1,19 +1,36 @@
 module Swimmy
   module Resource
     class Member
-      attr_reader :id, :name, :joined, :title, :account, :team, :mail, :phone,
+      require "date"
+
+      attr_reader :id, :name, :joined, :title, :account, :team, :mail, :phone, :birthday,
                   :google, :twitter, :github, :btmac, :organization
 
-      def initialize(id, name, joined, title, account, team, mail, phone, google,
+      def initialize(id, name, joined, title, account, team, mail, phone, birthday, google,
                      twitter, github, btmac, organization)
 
         @id, @name, @joined, @title, @account, @team, @mail, @phone, @google,
         @twitter, @github, @btmac, @organization = id, name, joined, title, account, team,
         mail, phone, google, twitter, github, btmac, organization
+
+        begin
+          @birthday = Date.parse(birthday)
+        rescue ArgumentError
+          @birthday = nil
+        end
       end
 
       def active?
         /\d{4}[MBD]/ !~ self.title
+      end
+
+      def birthday?
+        today = Date.today
+
+        return ((self.birthday != nil) && #誕生日がnilかどうか
+                (self.birthday.year <= today.year) && #未来の日付を入力していないか
+                (self.birthday.mon == today.mon) &&
+                (self.birthday.mday == today.mday))
       end
 
       def match(keyword)
@@ -34,6 +51,7 @@ module Swimmy
           "Team: #{@team}\n" +
           "Mail: #{@mail}\n" +
           "Phone: #{@phone}\n" +
+          "Birthday: #{@birthday.strftime("%Y-%m-%d")}\n" +
           "Google: #{@google}\n" +
           "Twitter: #{@twitter}\n" +
           "GitHub: #{@github}\n" +
