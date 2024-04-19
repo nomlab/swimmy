@@ -17,5 +17,6 @@ module Swimmy
     autoload :Event,       "#{dir}/event.rb"
     autoload :Pollen,      "#{dir}/pollen_resource.rb"
     autoload :OpenhabMetadata, "#{dir}/openhab_metadata.rb"
+    autoload :CookResource, "#{dir}/cook_resource.rb"
   end
 end
