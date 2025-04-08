@@ -8,7 +8,7 @@ GIT
 
 GIT
   remote: https://github.com/yoshinari-nomura/slack_socket_mode_bot.git
-  revision: bd04ad18c27948146b37c578eb902c8acd818c94
+  revision: 72677059c8b7778efb5c12b07cbb1f7d13382c06
   branch: main
   specs:
     slack_socket_mode_bot (0.9.1)
