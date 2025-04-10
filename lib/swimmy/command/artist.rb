@@ -4,69 +4,47 @@ module Swimmy
   module Command
     class Artist < Swimmy::Command::Base
       command "artist" do |client, data, match|   
-
-        puts(match.class)
-
-        # 結果を日本語で取得するための設定
-        # ENV['ACCEPT_LANGUAGE'] = "ja"
-        
-        # SpotifyのAPIを使用するための認証
-        # arg: client ID, secret ID
-        # RSpotify.authenticate("fa061fbd0dc74c2ea6235d94d572c389", "8bf78053165b4e618a92dd62f0fd5cc6")
-
-        spotify = Swimmy::Service::Spotify.new("fa061fbd0dc74c2ea6235d94d572c389", "8bf78053165b4e618a92dd62f0fd5cc6")
-
         case match[:expression]
+        when nil
+          client.say(channel: data.channel, text: "引数の数が正しくありません．検索するアーティスト名を入力してください．")
         when "help"
           client.say(channel: data.channel, text: help_message("artist"))
-        when nil
-          client.say(channel: data.channel, text: "引数の数が正しくありません．検索するアーティスト名を<artist>として以下のように入力してください．\n" +
-              "artist <artist>\n")
-        else
-          client.say(channel: data.channel, text: "アーティスト情報を取得中...")
-        
-          artist_name = match[:expression]
-          # artists = RSpotify::Artist.search(artist_name)
+        else        
+          begin 
+            # SpotifyのAPIを使用するための認証 
+            spotify = Swimmy::Service::Spotify.new(ENV['SPOTIFY_CLIENT_ID'], ENV['SPOTIFY_CLIENT_SECRET'])
+            
+            artist = spotify.search(match[:expression])
 
-          artists = spotify.search_artist_candidates(artist_name)
-
-          # 引数で検索した中で一番上のアーティストを取得
-          cand_artist = artists.first
-
-          if cand_artist.nil? then
-            client.say(channel: data.channel, text: "アーティストが見つかりませんでした．")
-          else
-            script = "#{artist_name} の楽曲ジャンル\n"
-
-            genres = cand_artist.genres # ジャンルの配列
-            genres.each do |genre|
-              script << "・#{genre}\n"
-            end
-
-            tracks = cand_artist.top_tracks(:JP) # 人気トラックの配列
-    
-            # popularityの値が大きい順にソート
-            sorted_tracks = tracks.sort_by{|track| track.popularity}.reverse
-    
-            script << "#{artist_name} の人気曲\n"
-
-            sorted_tracks.each do |track|
-              script << "・#{track.name}\n"
-            end
-
-            script += "\"#{artist_name}\"の関連アーティスト\n"
-            for i in 1..3 do
-              script << "・#{artists[i].name}\n"
-            end
-
-            client.say(channel: data.channel, text: script)
+            message = ""
+            artist_name = artist.get_name
+            genres = artist.get_genres
+            tracks = artist.get_popular_tracks
+            # 関連アーティストを3件取得
+            related_artists = artist.get_related_artists
+  
+            client.say(channel: data.channel, text: "アーティスト情報を取得中...")
+            message << "*#{match[:expression]}* の検索結果 ⇒ *#{artist_name}*\n"
+  
+            message << "*[楽曲ジャンル]*\n"
+            genres.each { |genre| message << "・#{genre}\n"}
+  
+            message << "*[人気曲]*\n"
+            tracks.each { |track| message << "・#{track}\n"}
+  
+            message << "*[関連アーティスト]*\n"
+            related_artists.each { |related_artist| message << "・#{related_artist}\n"}
+  
+            client.say(channel: data.channel, text: message)
+          rescue => e
+            client.say(channel: data.channel, text: "アーティスト情報を取得できませんでした．API認証に失敗した可能性があります．")
           end
         end 
       end #command
       
       help do
         title "artist"
-        desc "アーティストに関連する情報を表示する"
+        desc "アーティストに関連する情報を表示します"
         long_desc "artist <artist name> - アーティストの楽曲ジャンル，人気楽曲，関連アーティストを表示します"
       end #help
     end #class Coop    

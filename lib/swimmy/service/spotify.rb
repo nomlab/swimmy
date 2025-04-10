@@ -1,8 +1,7 @@
-require 'rspotify'
-
 module Swimmy
   module Service
     class Spotify
+      require 'rspotify'
 
       def initialize(client_id, client_secret)
         # 結果を日本語で取得するための設定
@@ -13,26 +12,18 @@ module Swimmy
 
       def search(artist_name)
         artists = RSpotify::Artist.search(artist_name)
-        if artists.empty?  
-          return nil
-        else
-          return Swimmy::Resource::ArtistInfo.new(artists.first)
+        # 先頭要素のアーティストを検索結果とする
+        artist = artists.first
+        name = artist.name
+        genres = artist.genres
+        tracks = artist.top_tracks(:JP)
+        related_artists = []
+        for i in 0..2
+          # 検索結果中，2番目以降のアーティスト名を3件取り出す
+          related_artists << artists[i + 1]
         end
-      end
 
-      def search_related_artists(artist_name, n)
-        artists = RSpotify::Artist.search(artist_name)
-        if artists.empty?  
-          return nil
-        else
-          related_artists = []
-          for i in 0..n-1
-            # 検索結果中，2番目以降のアーティスト名を取り出す
-            related_artists << artists[i + 1].name
-          end
-
-          return related_artists
-        end
+        return Swimmy::Resource::ArtistInfo.new(name, genres, tracks, related_artists)
       end
     end #class Spotify
   end #module Service

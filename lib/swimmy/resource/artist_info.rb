@@ -1,9 +1,11 @@
 module Swimmy
   module Resource
     class ArtistInfo
-      def initialize(artist)
-        @artist = artist
-        @name = artist.name
+      def initialize(name, genres, tracks, related_artists)
+        @name = name
+        @genres = genres  
+        @tracks = tracks
+        @related_artists = related_artists
       end
 
       def get_name
@@ -12,7 +14,7 @@ module Swimmy
 
       def get_genres
         genrus = []
-        @artist.genres.each do |genre|
+        @genres.each do |genre|
           genrus << "#{genre}"
         end
 
@@ -20,16 +22,22 @@ module Swimmy
       end
 
       def get_popular_tracks
-        tracks = @artist.top_tracks(:JP)
         # popularityの値が大きい順にソート
-        sorted_tracks = tracks.sort_by{|track| track.popularity}.reverse
+        sorted_tracks = @tracks.sort_by{|track| track.popularity}.reverse
         tracks = []
         sorted_tracks.each do |track|
           tracks << "#{track.name}"
         end
         return tracks
       end
-      
+
+      def get_related_artists
+        related_artists = []
+        @related_artists.each do |related_artist|
+          related_artists << "#{related_artist.name}"
+        end
+        return related_artists
+      end      
     end
   end
 end  # module Swimmy
