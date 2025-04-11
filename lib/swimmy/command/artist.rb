@@ -1,5 +1,3 @@
-# require 'rspotify'
-
 module Swimmy
   module Command
     class Artist < Swimmy::Command::Base
@@ -13,10 +11,8 @@ module Swimmy
           begin 
             # SpotifyのAPIを使用するための認証 
             spotify = Swimmy::Service::Spotify.new(ENV['SPOTIFY_CLIENT_ID'], ENV['SPOTIFY_CLIENT_SECRET'])
-            
             artist = spotify.search(match[:expression])
 
-            message = ""
             artist_name = artist.get_name
             genres = artist.get_genres
             tracks = artist.get_popular_tracks
@@ -24,6 +20,8 @@ module Swimmy
             related_artists = artist.get_related_artists
   
             client.say(channel: data.channel, text: "アーティスト情報を取得中...")
+
+            message = ""
             message << "*#{match[:expression]}* の検索結果 ⇒ *#{artist_name}*\n"
   
             message << "*[楽曲ジャンル]*\n"
