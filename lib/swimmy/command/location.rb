@@ -32,7 +32,7 @@ module Swimmy
           end
         # 引数が指定されない場合
         else 
-          client.say(channel: data.channel, text: "引数を指定してください．")
+          client.say(channel: data.channel, text: "引数の数が正しくありません．")
           return;
         end
 
