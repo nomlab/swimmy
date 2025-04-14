@@ -38,10 +38,7 @@ module Swimmy
           return "#{month}/#{day} は存在しない日付です" if !Date.valid_date?(4, month, day)
 
           uri_str = "http://numbersapi.com/#{month}/#{day}/date?json&default=There+is+no+infomation+about+the+day+#{month}/#{day}"
-          json = fetch_with_redirect(uri_str)
-          en_text = JSON.parse(json)["text"]
-          text = translate(en_text)
-          message(text)
+          uri_to_message(uri_str)
         end
 
         def year(year=nil)
@@ -50,10 +47,17 @@ module Swimmy
 
           era = if year < 0 then "#{-year} BC" else "#{year}" end
           uri_str = "http://numbersapi.com/#{year}/year?json&default=There+is+no+infomation+about+the+year+#{era}"
+          uri_to_message(uri_str)
+        end
+
+        def uri_to_message(uri_str)
           json = fetch_with_redirect(uri_str)
-          en_text = JSON.parse(json)["text"]
-          text = translate(en_text)
-          message(text)
+          parsed_json = JSON.parse(json)
+          en_text = parsed_json["text"]
+          ja_text = translate(en_text)
+
+          return ja_text if parsed_json["found"]==false
+          message(en_text, ja_text)
         end
 
         def fetch_with_redirect(uri_str, limit = 5)
@@ -74,18 +78,21 @@ module Swimmy
           end
         end
 
-        def translate(text)
+        def translate(en_text)
           translate_uri = "#{ENV['TRANSLATE_API_URL']}"
-          translate_uri << "?text=#{text}&source=en&target=ja"
+          translate_uri << "?text=#{en_text}&source=en&target=ja"
           translate_json = fetch_with_redirect(translate_uri)
           translate_content = JSON.parse(translate_json)
-          text = if translate_content["code"]==200 then translate_content["text"] else text end
+          text = if translate_content["code"]==200 then translate_content["text"] else "翻訳できませんでした" end
         end
 
-        def message(text)
+        def message(en_text, ja_text)
           text = <<~EOS 
           [trivia]
-          #{text}
+          #{en_text}
+
+          
+          #{ja_text}
           EOS
         end
 
