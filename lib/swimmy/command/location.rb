@@ -23,18 +23,22 @@ module Swimmy
             # client.say(channel: data.channel, text:"arg: #{arg}")
           # 引数の数が正しくない場合
           elsif arg.split.length != 1
-            client.say(channel: data.channel, text: "引数の数が正しくありません．")
+            # client.say(channel: data.channel, text: "引数の数が正しくありません．")
+            say_wrong_arg(client, data)
             return;
           # 引数に誤った入力がされた場合
           else 
-            client.say(channel: data.channel, text: "引数の値が正しくありません．")
+            # client.say(channel: data.channel, text: "引数の値が正しくありません．")
+            say_wrong_arg(client, data)
             return;
           end
         # 引数が指定されない場合
         else 
-          client.say(channel: data.channel, text: "引数の数が正しくありません．")
+          # client.say(channel: data.channel, text: "引数の数が正しくありません．")
+          say_wrong_arg(client, data)
           return;
         end
+        
 
         begin
           # 現在地をMQTTでpublish
@@ -49,9 +53,33 @@ module Swimmy
         client.say(channel: data.channel, text: "ドアプレートを更新しました．")
       end
 
-      # help do
+      help do
+        title "location"
+        desc "ドアプレートの状態を変更します．"
+        long_desc "location <所在>\n" +
+                  "ドアプレートの状態を指定した<所在>に変更します．\n" +
+                  "指定できる<所在>は以下の6つです．\n" +
+                  "hi :                   在室\n" +
+                  "lec :                 講義\n" +
+                  "meet :             打合\n" +
+                  "oncampus :   学内\n" +
+                  "offcampus :   学外\n" +
+                  "bye :                帰宅\n" +
+                  "引数は1つだけ指定してください．\n" 
+      end
 
-      # end
+
+      def self.say_wrong_arg(client, data)
+        client.say(channel: data.channel,
+                  text: "引数が正しく入力されていません．\n" +
+                        "引数は 以下から1つだけ指定してください．\n\n" +
+                        "hi :                   在室\n" +
+                        "lec :                 講義\n" +
+                        "meet :             打合\n" +
+                        "oncampus :   学内\n" +
+                        "offcampus :   学外\n" +
+                        "bye :                帰宅\n") # 出力のインデント調整のために空白を入れています
+      end
     end
   end
 end
