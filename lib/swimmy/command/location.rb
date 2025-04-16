@@ -1,11 +1,3 @@
-# hi         在室
-# lec        講義
-# meet       打合
-# campus     学内
-# outside    学外
-# bye        帰宅
-
-
 module Swimmy
   module Command
     class Location < Swimmy::Command::Base
@@ -14,51 +6,36 @@ module Swimmy
         user = client.web_client.users_info(user: data.user).user
         user_id = user.id
         user_name = user.profile.display_name
-        location_list = ["hi", "lec", "meet", "campus", "outside", "bye"]
-        location_list_206 = ["hi", "meet", "lab", "lec", "dept", "campus", "miss", "bye"]
         arg = match[:expression] # arg.class=>string
-
-        # 引数が指定される場合
-        if arg
-          # 引数が正しい場合
-          if location_list.include?(arg)
-                                        # 206号室を追加する場合，条件式に以下を加える．
-                                        # || location_list_206.include?(arg)
-          # # 引数の数が正しくない場合
-          # elsif arg.split.length != 1
-          #   # client.say(channel: data.channel, text: "引数の数が正しくありません．")
-          #   say_wrong_arg(client, data)
-          #   return;
-          # # 引数に誤った入力がされた場合
-          # else 
-          #   # client.say(channel: data.channel, text: "引数の値が正しくありません．")
-          #   say_wrong_arg(client, data)
-          #   return;
-          # end
-
-          # 引数の指定(数もしくは値)が正しくない場合
-          else
-            say_wrong_arg(client, data)
-            return;
-          end
-        # 引数が入力されなかった場合
-        else 
-          # client.say(channel: data.channel, text: "引数の数が正しくありません．")
-          say_wrong_arg(client, data)
-          return;
-        end
         
-        begin
-          # 現在地をMQTTでpublish
-          # client.say(channel: data.channel, text: "更新確認")
-          doorplate_service = Swimmy::Service::Doorplate.new(mqtt_client)
-          doorplate_service.send_attendance_event(arg, user_id, user_name)
-        rescue Exception => e
-          client.say(channel: data.channel, text: "ドアプレートを更新できませんでした．")
-          raise e
+        # 部屋番号によって指定できる所在を変更する
+        # 他の実装は可能?
+        location_list_106 = ["hi", "lec", "meet", "campus", "outside", "bye"]
+        location_list_206 = ["hi", "meet", "lab", "lec", "dept", "campus", "miss", "bye"]
+        case user_name
+        when "nom"
+          location_list = location_list_206
+        else
+          location_list = location_list_106
         end
 
-        client.say(channel: data.channel, text: "ドアプレートを更新しました．")
+        
+        if arg && location_list.include?(arg)
+          # 引数が正しく指定される場合
+          begin
+            # MQTTブローカにpublish
+            doorplate_service = Swimmy::Service::Doorplate.new(mqtt_client)
+            doorplate_service.send_attendance_event(arg, user_id, user_name)
+          rescue Exception => e
+            client.say(channel: data.channel, text: "ドアプレートを更新できませんでした．")
+            raise e
+          end
+          client.say(channel: data.channel, text: "ドアプレートを更新しました．")
+        else
+          # 引数が正しく入力されない場合(値が不正，引数がない，引数が2つ以上) 
+          say_wrong_arg(client, data)
+          break;
+        end
       end
 
       help do
