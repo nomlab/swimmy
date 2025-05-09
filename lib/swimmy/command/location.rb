@@ -1,22 +1,13 @@
 module Swimmy
   module Command
     class Location < Swimmy::Command::Base
-      command 'location' do |client, data, match|
+      command 'loc' do |client, data, match|
         user = client.web_client.users_info(user: data.user).user
         user_id = user.id
         user_name = user.profile.display_name
         arg = match[:expression]
-        
-        # 引数が指定されていない場合
-        if arg.nil? || arg.empty?
-          client.say(channel: data.channel,
-                        text: "引数が指定されていません．\n")
-          return
-        end
 
-        # 部屋番号によって指定できる所在を変更する
-        # location_list_106 = ["hi", "lecture", "meeting", "campus", "outside", "bye"]
-        # location_list_206 = ["hi", "meeting", "laboratory", "lecture", "departmemt", "campus", "bye"]
+        # 所在リストを選択する
         location_list_106 = {
                               "hi"      => "在室",
                               "lecture" => "講義",
@@ -41,6 +32,14 @@ module Swimmy
           location_list = location_list_106
         end
 
+        # 引数が指定されていない場合
+        if arg.nil? || arg.empty?
+          client.say(channel: data.channel,
+                        text: "引数が指定されていません．\n" +
+                              message_location_help(location_list))
+          return
+        end
+
         # 引数の先頭が一致する所在を取得する
         prefix_match_list = retrieve_complement_location_list(arg, location_list)
 
@@ -48,22 +47,22 @@ module Swimmy
         if prefix_match_list.length > 1
           # 引数で指定した文字列が複数の所在にマッチする場合
           client.say(channel: data.channel,
-                        text: "指定された文字列に該当する所在が複数見つかりました．\n")    
-          min_prefix_list = get_min_prefix_list(prefix_match_list.keys)
-          prefix_match_list.each do |key, value|
-            client.say(channel: data.channel,
-                          text: "#{key}, #{value}, #{min_prefix_list[key]}")
-          end
+                        text: "指定された文字列に該当する所在が複数見つかりました．\n" +
+                              message_location_help(location_list)) 
+          # min_prefix_list = get_min_prefix_list(prefix_match_list.keys)
+          # prefix_match_list.each do |key, value|
+          #   client.say(channel: data.channel,
+          #                 text: "#{key}, #{value}, #{min_prefix_list[key]}")
+          # end
           return
         elsif prefix_match_list.length == 0
           # 引数で指定した文字列が所在にマッチしない場合
           client.say(channel: data.channel,
-                        text: "指定された文字列に該当する所在は見つかりませんでした．\n")
+                        text: "指定された文字列に該当する所在は見つかりませんでした．\n" +
+                              message_location_help(location_list))
           return
         end
-        
-        client.say(channel: data.channel,
-                        text: "#{prefix_match_list.keys.first}")
+
         # 引数で指定した文字列が1つの所在にマッチする場合
         begin
           # MQTTブローカにpublish
@@ -105,27 +104,24 @@ module Swimmy
 
       ################################################################################
       # Helper Functions
-      def self.say_wrong_arg(client, data)
-        client.say(channel: data.channel,
-                  text: "引数が正しく入力されていません．\n" +
-                        "引数は 以下から1つだけ指定してください．\n\n" +
-                        "106号室\n" +
-                        "hi :                   在室\n" +
-                        "lec :                 講義\n" +
-                        "meet :             打合\n" +
-                        "campus :        学内\n" +
-                        "outside :        学外\n" +
-                        "bye :                帰宅\n\n" +
-                        "206号室\n" +
-                        "hi :                   在室\n" +
-                        "meet :            オンライン講義・会議中\n" +
-                        "lab :                 研究室(105・106)\n" +
-                        "lec :                 講義室\n" +
-                        "dept :              学科内\n" +
-                        "campus :        大学内\n" +
-                        "miss :              行方不明\n" +
-                        "bye :                帰宅・出張\n" # 出力のインデント調整のために空白を入れています
-        )
+      
+      # 引数に関するヘルプ文を取得
+      def self.message_location_help(location_list)
+        # プレフィックスリストを作成
+        prefix_list = get_min_prefix_list(location_list.keys)
+
+        max_location_len = get_max_len(location_list.keys)
+        max_state_len = get_max_len(location_list.values)
+        max_prefix_len = get_max_len(prefix_list.values)
+
+        # TODO: puts -> client.say
+        message = "引数を以下から1つを指定してください．\n\n" +
+                  "引数(最小入力) : 所在名\n"
+  
+        location_list.each do |key, value|
+          message += "#{key.ljust(max_location_len)} (#{prefix_list[key].ljust(max_prefix_len)}) : #{value.ljust(max_state_len)}\n" 
+        end
+        return message
       end
 
       # 所在リストから prefix で始まる所在を取得する
