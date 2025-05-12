@@ -69,57 +69,51 @@ module Swimmy
           doorplate_service = Swimmy::Service::Doorplate.new(mqtt_client)
           doorplate_service.send_attendance_event(prefix_match_list.keys.first, user_id, user_name)
         rescue Exception => e
-          client.say(channel: data.channel, text: "ドアプレートを更新できませんでした．")
+          client.say(channel: data.channel, text: "ドアプレートの状態を更新できませんでした．")
           raise e
         end
-        client.say(channel: data.channel, text: "ドアプレートを更新しました．")
+        client.say(channel: data.channel, text: "ドアプレートの状態を #{prefix_match_list.values.first} に更新しました．")
       end
 
       ################################################################################
-      # TODO: help, self_say.wrong_arg の内容を変更する
       help do
         title "location"
-        desc "ドアプレートの状態を変更します．"
+        desc "ドアプレートの所在を変更します．"
         long_desc "location <所在>\n" +
                   "ドアプレートの状態を指定した<所在>に変更します．\n" +
                   "指定できる<所在>は以下のいずれかです．\n\n" +
                   "106号室\n" +
-                  "hi :                   在室\n" +
-                  "lecture :                 講義\n" +
-                  "meeting :             打合\n" +
-                  "campus :        学内\n" +
-                  "outside :        学外\n" +
-                  "bye :                帰宅\n\n" +
+                  "hi (h) : 在室\n" +
+                  "lecture (l) : 講義\n" +
+                  "meeting (m) : 打合\n" +
+                  "campus (c) : 学内\n" +
+                  "outside (o) : 学外\n" +
+                  "bye (b) : 帰宅\n\n" +
                   +
                   "206号室\n" +
-                  "hi :                   在室\n" +
-                  "meeting :            オンライン講義・会議中\n" +
-                  "laboratory :                 研究室(105・106)\n" +
-                  "lecture :                 講義室\n" +
-                  "department :              学科内\n" +
-                  "campus :        大学内\n" +
-                  "bye :                帰宅・出張\n" +
-                  "\n引数は1つだけ指定してください．\n" # 出力のインデント調整のために空白を入れています
+                  "hi (h) : 在室\n" +
+                  "meeting (m) : オンライン講義・会議中\n" +
+                  "laboratory (la) : 研究室(105・106)\n" +
+                  "lecture (le) : 講義室\n" +
+                  "department (d) : 学科内\n" +
+                  "campus (c) : 大学内\n" +
+                  "bye (b) : 帰宅・出張\n"
       end
 
       ################################################################################
       # Helper Functions
-      
+
       # 引数に関するヘルプ文を取得
       def self.message_location_help(location_list)
         # プレフィックスリストを作成
         prefix_list = get_min_prefix_list(location_list.keys)
 
-        max_location_len = get_max_len(location_list.keys)
-        max_state_len = get_max_len(location_list.values)
-        max_prefix_len = get_max_len(prefix_list.values)
-
         # TODO: puts -> client.say
         message = "引数を以下から1つを指定してください．\n\n" +
-                  "引数(最小入力) : 所在名\n"
+                  "引数(最小入力) :  所在名\n"
   
         location_list.each do |key, value|
-          message += "#{key.ljust(max_location_len)} (#{prefix_list[key].ljust(max_prefix_len)}) : #{value.ljust(max_state_len)}\n" 
+          message += "#{key} (#{prefix_list[key]}) :  #{value}\n"
         end
         return message
       end
