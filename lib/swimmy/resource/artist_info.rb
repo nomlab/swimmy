@@ -8,11 +8,11 @@ module Swimmy
         @related_artists = related_artists
       end
 
-      def get_name
+      def name
         return @name
       end
 
-      def get_genres
+      def genres
         genrus = []
         @genres.each do |genre|
           genrus << "#{genre}"
@@ -21,7 +21,7 @@ module Swimmy
         return genrus
       end
 
-      def get_popular_tracks
+      def popular_tracks
         # popularityの値が大きい順にソート
         sorted_tracks = @tracks.sort_by{|track| track.popularity}.reverse
         tracks = []
@@ -31,7 +31,7 @@ module Swimmy
         return tracks
       end
 
-      def get_related_artists
+      def related_artists
         related_artists = []
         @related_artists.each do |related_artist|
           related_artists << "#{related_artist.name}"
