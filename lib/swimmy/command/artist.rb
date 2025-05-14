@@ -13,11 +13,10 @@ module Swimmy
             spotify = Swimmy::Service::Spotify.new(ENV['SPOTIFY_CLIENT_ID'], ENV['SPOTIFY_CLIENT_SECRET'])
             artist = spotify.search(match[:expression])
 
-            artist_name = artist.get_name
-            genres = artist.get_genres
-            tracks = artist.get_popular_tracks
-            # 関連アーティストを3件取得
-            related_artists = artist.get_related_artists
+            artist_name = artist.name
+            genres = artist.genres
+            tracks = artist.popular_tracks
+            related_artists = artist.related_artists
   
             client.say(channel: data.channel, text: "アーティスト情報を取得中...")
 
