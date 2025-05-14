@@ -13,6 +13,7 @@ module Swimmy
             spotify = Swimmy::Service::Spotify.new(ENV['SPOTIFY_CLIENT_ID'], ENV['SPOTIFY_CLIENT_SECRET'])
             artist = spotify.search(match[:expression])
 
+            
             artist_name = artist.name
             genres = artist.genres
             tracks = artist.popular_tracks
