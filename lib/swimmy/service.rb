@@ -19,5 +19,6 @@ module Swimmy
     autoload :Nomnichi, "#{dir}/nomnichi.rb"
     autoload :RecipeInfomation, "#{dir}/recipe_information.rb"
     autoload :Bookmark, "#{dir}/bookmark.rb"
+    autoload :Karaoke, "#{dir}/karaoke.rb"
   end
 end
