@@ -22,5 +22,6 @@ module Swimmy
     autoload :Karaoke, "#{dir}/karaoke.rb"
     autoload :Translate, "#{dir}/translate.rb"
     autoload :Numbersapi, "#{dir}/numbersapi.rb"
+    autoload :GoogleCalendar, "#{dir}/schedule_service.rb"
   end
 end
