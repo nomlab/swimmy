@@ -20,5 +20,7 @@ module Swimmy
     autoload :RecipeInfomation, "#{dir}/recipe_information.rb"
     autoload :Bookmark, "#{dir}/bookmark.rb"
     autoload :Karaoke, "#{dir}/karaoke.rb"
+    autoload :Translate, "#{dir}/translate.rb"
+    autoload :Numbersapi, "#{dir}/numbersapi.rb"
   end
 end
