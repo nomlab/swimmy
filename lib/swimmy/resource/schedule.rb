@@ -77,9 +77,9 @@ module Swimmy
       end
 
       def execute(client)
-        puts "at command executing [#{@command}]..."
-        text = 'swimmy ' + @command
-        SlackRubyBot::Hooks::Message.new.call(
+        text = "#{client.name} #{@command}"
+        puts "at command executing [#{text}]..."
+        Swimmy::Command::Base.invoke_all(
           client,
           Hashie::Mash.new(type: 'message', text: text, channel: @channel)
         )

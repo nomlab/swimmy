@@ -44,7 +44,7 @@ module Swimmy
       end
 
       tick do |client, data|
-        puts "Qiita Trend..."
+        # puts "Qiita Trend..."
         now = Time.new
         message = nil
 

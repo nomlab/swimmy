@@ -100,12 +100,6 @@ def to_open_struct(obj)
   end
 end
 
-def child_command_classes(command_classes)
-  command_classes.reject do |k|
-    k.name&.starts_with?('SlackRubyBot::Commands::')
-  end
-end
-
 def initialize_spreadsheet(spreadsheet_id)
   require "clian"
   require "sheetq"
@@ -142,19 +136,44 @@ Swimmy::Command.mqtt_client =
 
 BOT_NAME = ARGV[0] || 'swimmy'
 
+sent_hello = false
+
 bot = SlackSocketModeBot.new(name: BOT_NAME, token: SLACK_BOT_TOKEN, app_token: SLACK_APP_TOKEN, logger: logger) do |data|
-  logger.debug("data: #{data}")
 
-  # retry_attempt == 0 means the event is the first time.
-  # see https://api.slack.com/apis/events-api#retries
-  next unless data[:payload] && data[:payload][:event] && data[:retry_attempt] == 0
+  logger.debug("data-to-bot: #{data}")
 
-  data = to_open_struct(data[:payload][:event])
+  case data[:type]
+  when "ping"
+    # ping packet from Websocket layer
+    data = to_open_struct({:type => "ping"})
 
-  child_command_classes(SlackRubyBot::Commands::Base.command_classes).each do |command_class|
-    logger.debug("invoke: #{command_class.name}")
-    command_class.invoke(bot, data)
+  when "hello"
+    # "hello" message from Slack
+    #   https://api.slack.com/apis/socket-mode#connect
+    #   Socket Mode 2. Connect to the WebSocket
+
+    next if sent_hello
+    data = to_open_struct(data)
+    sent_hello = true
+
+  else
+    # Event object from Slack Event API.
+    # retry_attempt == 0 means the event is the first time.
+    # see https://api.slack.com/apis/events-api#retries
+    next unless data[:payload] && data[:payload][:event] && data[:retry_attempt] == 0
+
+    # NOTE: It does not have data[:type].
+    data = to_open_struct(data[:payload][:event])
+
+    # Event examples:
+    #   reaction_added event
+    #     https://api.slack.com/events/reaction_added
+    #
+    #   message event
+    #    https://api.slack.com/events/message
   end
+
+  Swimmy::Command::Base.invoke_all(bot, data)
 
   rescue Exception
     puts $!.full_message

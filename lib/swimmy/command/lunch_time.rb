@@ -37,7 +37,7 @@ module Swimmy
       end
 
       tick do |client, data|
-        puts "Lunch Time..."
+        # puts "Lunch Time..."
         now = Time.new
 
         POST_SCHEDULE.each do |channel, time|

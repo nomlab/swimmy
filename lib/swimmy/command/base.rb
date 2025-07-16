@@ -51,21 +51,51 @@ module Swimmy
       end
 
       # You can Create periodic task by using tick.
-      #   tick do |client, data|
+      #   tick |client, data| do
       #     CHANNEL_LIST.each do |channel|
       #       client.say(channel: channel, text: "Hi!")
       #     end
       #   end
       def self.tick(&block)
-        SlackRubyBot::Server.on("pong", &block)
+        on "ping", &block
       end
 
-      # Can remove this in the future?
-      #   Define hooks from within the bot instance #211
-      #   https://github.com/slack-ruby/slack-ruby-bot/issues/211
-      #
       def self.on(event_name, &block)
-        SlackRubyBot::Server.on(event_name, &block)
+        @hooks ||= {}
+        @hooks[event_name] ||= []
+        @hooks[event_name] << block
+      end
+
+      def self.invoke(client, data)
+        # data.type is one of
+        # "ping" ... websocket layer event
+        # "hello" ... Slack greeting event
+        # "message", "reaction_added" etc.: Slack Event API event
+        #
+        event_name = data.type
+        if @hooks && @hooks[event_name]
+          @hooks[event_name].each do |hook|
+            begin
+              hook.call(client, data)
+            rescue StandardError => e
+              puts "Error in 'on' hook: #{e.message}"
+            end
+          end
+        end
+        super(client, data)
+      end
+
+      def self.child_command_classes(command_classes)
+        command_classes.reject do |k|
+          k.name&.starts_with?('SlackRubyBot::Commands::')
+        end
+      end
+      private_class_method :child_command_classes
+
+      def self.invoke_all(client, data)
+        child_command_classes(SlackRubyBot::Commands::Base.command_classes).each do |command_class|
+          command_class.invoke(client, data)
+        end
       end
     end
   end

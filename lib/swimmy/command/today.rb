@@ -17,16 +17,16 @@ module Swimmy
 
         google_oauth ||= begin
           Swimmy::Resource::GoogleOAuth.new('config/credentials.json', 'config/tokens.json')
-        rescue e
+        rescue
           message = 'Google OAuthの認証に失敗しました．適切な認証情報が設定されているか確認してください．'
           client.say(channel: data.channel, text: message)
           return
         end
 
         begin
-          message = "今日(#{Date.today.strftime("%m/%d")})の予定\n"
+          message = "今日 (#{Date.today.strftime('%Y-%m-%d')}) の予定\n"
           message << GetEvents.new(spreadsheet, google_oauth).message
-        rescue => e
+        rescue
           message = "予定の取得に失敗しました．"
         end
 
@@ -61,7 +61,10 @@ module Swimmy
         message = "- 今日の予定はありません．\n" if events.empty?
 
         for time, summary, name in events
-          message << "#{time}: #{summary}(#{name})\n"
+          if time =~ /(\d{2}):(\d{2}):(\d{2})/
+            time = $1 + ":" + $2
+          end
+          message << "#{time} #{summary} (#{name})\n"
         end
 
         return message

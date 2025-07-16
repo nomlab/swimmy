@@ -22,13 +22,22 @@ module Swimmy
         json = {:user_name => data.user, :text => data.text}.to_json
         params = JSON.parse(json, symbolize_names: true)
         res = Poll.new.response(params)
-        text = JSON.parse(res)
+        if res
+          text = JSON.parse(res)["text"]
+          error = false
+        else
+          text = help_message || "poll question answer1,answer2,..."
+          error = true
+        end
 
         res = client.web_client.chat_postMessage(
           channel: data.channel,
           as_user: true,
-          text: text["text"]
+          text: text
         )
+
+        next if error
+
         $poll[:ts] = res.message.ts
         $poll[:choices].each_with_index do |choice, i|
           client.web_client.reactions_add(name: $emoji_list[i][1], channel: data.channel, timestamp: $poll[:ts])
@@ -44,10 +53,6 @@ module Swimmy
                   "選択肢が複数ある場合は，半角コンマで区切ってください．" +
                   "選択肢は最大9つまで入力できます．"
       end
-      
-    end
-    
-    class PollCounter < SlackRubyBot::Server
       on 'reaction_added' do |client, data|
         p data
         if data.item.ts == $poll[:ts] and data.item_user != data.user
@@ -74,11 +79,12 @@ module Swimmy
         end
       end
     end
-    
+
     class Poll
       def response(params, options = {})
         query_str = params[:text]
         query_str = query_str.match(/poll (.*) (.*)/)
+        return nil unless query_str
         $poll[:title] = query_str[1]
         $poll[:choices] = query_str[2].split(",")
         $poll[:choices].each do |choice|
