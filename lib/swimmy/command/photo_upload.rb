@@ -31,7 +31,7 @@ module Swimmy
                   client.say(channel: data.channel, text: message)
                   return
                 end
-              blob = SlackFileDownloader.new(ENV["SLACK_API_TOKEN"]).fetch(file.url_private_download)
+              blob = SlackFileDownloader.new(ENV["SLACK_BOT_TOKEN"]).fetch(file.url_private_download)
               url = GooglePhotosUploader.new(google_oauth).upload(blob, file.name, data.text)
               client.say(channel: data.channel, text: "アップロード完了 #{url}")
             rescue

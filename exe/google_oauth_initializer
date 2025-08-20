@@ -39,7 +39,7 @@ class OauthData
        + @client_id \
        + '&redirect_uri=' \
        + @redirect_uri \
-       + '&scope=https://www.googleapis.com/auth/photoslibrary ' \
+       + '&scope=https://www.googleapis.com/auth/photoslibrary.appendonly ' \
        + 'https://www.googleapis.com/auth/calendar.events.readonly' \
        + '&access_type=offline'
   end
@@ -81,15 +81,7 @@ def authorize(oauth_data)
 end
 
 def open_browser(url)
-  res = nil
-  if OS.windows?
-    res = system('start', url)
-  elsif OS.mac?
-    res = system('open', url)
-  elsif OS.linux?
-    res = system('xdg-open', url)
-  end
-
+  res = system('xdg-open', url)
   if (res.nil? || res == false)
     puts 'Open below URL with your browser'
     puts url

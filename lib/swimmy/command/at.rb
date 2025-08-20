@@ -55,7 +55,7 @@ module Swimmy
       end
 
       tick do |client, data|
-        puts "at command..."
+        # puts "at command..."
 
         now = Time.now
 
