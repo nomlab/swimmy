@@ -16,6 +16,9 @@ module Swimmy
           message = self.get_date_event_message($1.to_i, $2.to_i)
         when year_expr
           message = self.get_year_event_message($1.to_i)
+        when nil
+          today = Date.today
+          message = self.get_date_event_message(today.month, today.day)
         when "help"
           message = help_message("hizuki")
         else
