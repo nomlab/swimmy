@@ -39,7 +39,7 @@ module Swimmy
                          text: "アップロード完了 #{url}",
                          thread_ts: data.thread_ts || data.ts)
             rescue
-              message = '写真のアップロードに失敗しました．'
+              message = "写真のアップロードに失敗しました (ファイル名: #{file.name})．"
               client.say(channel: data.channel, text: message)
             end
           end
