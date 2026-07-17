@@ -5,16 +5,13 @@ module Swimmy
         @mqtt = mqtt_client
       end
 
-      def send_attendance_event(attendance, user_id, user_name)
+      def send_attendance_event(attendance, user_name)
         require "json"
 
-        topic = "dt/swimmy/v1/ou/eng4/nomlab/swimmy/attend"
+        topic = "cmd/pinot/v1/ou/eng4/doormgr/state"
         payload = JSON.dump({
-          attendance: attendance,
-          slack_user: {
-            id: user_id,
-            name: user_name,
-          },
+          member: user_name.tr('-','_'),
+          position: attendance,
         })
 
         @mqtt.publish(topic, payload)

@@ -42,8 +42,12 @@ module Swimmy
         client.say(channel: data.channel, text: "履歴を記録しました．")
 
         # attendance event (for doorplate)
+        attendance_labels = {
+          "hi" => "在室",
+          "bye" => "帰宅"
+        }
         doorplate_service = Swimmy::Service::Doorplate.new(mqtt_client)
-        doorplate_service.send_attendance_event(cmd, user_id, user_name)
+        doorplate_service.send_attendance_event(attendance_labels[cmd], user_name)
       end
 
       help do
