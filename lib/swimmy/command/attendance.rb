@@ -11,7 +11,6 @@ module Swimmy
         arg = match[:expression]&.strip
         now = Time.now
         user = client.web_client.users_info(user: data.user).user
-        user_id = user.id
 
         case parse_arg(arg)
         when "do_current_user"
@@ -44,10 +43,13 @@ module Swimmy
         # attendance event (for doorplate)
         attendance_labels = {
           "hi" => "在室",
-          "bye" => "帰宅"
+          "bye" => user_name == "nom" ? "帰宅・出張" : "帰宅"
         }
-        doorplate_service = Swimmy::Service::Doorplate.new(mqtt_client)
-        doorplate_service.send_attendance_event(attendance_labels[cmd], user_name)
+        position = attendance_labels[cmd]
+        if position
+          doorplate_service = Swimmy::Service::Doorplate.new(mqtt_client)
+          doorplate_service.pub_doormgr_state(position, user_name)
+        end
       end
 
       help do
