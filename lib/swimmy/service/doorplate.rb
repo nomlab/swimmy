@@ -5,16 +5,16 @@ module Swimmy
         @mqtt = mqtt_client
       end
 
-      def send_attendance_event(attendance, user_id, user_name)
+      def pub_doormgr_state(position, user_name)
         require "json"
 
-        topic = "dt/swimmy/v1/ou/eng4/nomlab/swimmy/attend"
+        topic = "cmd/pinot/v1/ou/eng4/doormgr/state"
         payload = JSON.dump({
-          attendance: attendance,
-          slack_user: {
-            id: user_id,
-            name: user_name,
-          },
+          # Slack の user_name と door-mgr の member は対応している．
+          # しかし door-mgr では`-`が利用できず`_`に置換したものを期待しているため変換する．
+          # e.g. user_name: "fujiwara-e" -> member: "fujiwara_e"
+          member: user_name.tr('-','_'),
+          position: position,
         })
 
         @mqtt.publish(topic, payload)

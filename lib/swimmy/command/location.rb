@@ -41,7 +41,7 @@ module Swimmy
         if match_locations.length == 1
           begin
             doorplate_service = Swimmy::Service::Doorplate.new(mqtt_client)
-            doorplate_service.send_attendance_event(match_locations.keys.first, user_id, user_name)
+            doorplate_service.pub_doormgr_state(match_locations.values.first, user_name)
           rescue => e
             client.say(channel: data.channel, text: "ドアプレートの状態を更新できませんでした．")
             return
