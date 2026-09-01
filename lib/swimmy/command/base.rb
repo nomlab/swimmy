@@ -87,7 +87,8 @@ module Swimmy
 
       def self.child_command_classes(command_classes)
         command_classes.reject do |k|
-          k.name&.starts_with?('SlackRubyBot::Commands::')
+          k.name&.starts_with?('SlackRubyBot::Commands::') &&
+          k != SlackRubyBot::Commands::Help
         end
       end
       private_class_method :child_command_classes
