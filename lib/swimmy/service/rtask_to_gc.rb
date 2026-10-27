@@ -33,7 +33,7 @@ module Swimmy
         #tasks=Service::Rask::task_list(github_name)
         tasks = fetch_rtask_tasks(github_name)
         google_oauth = Resource::GoogleOAuth.new('config/credentials.json', 'config/tokens.json')
-        calendar_service = Service::GoogleCalendar.from_spreadsheet(google_oauth, @spreadsheet, "nomlab")
+        calendar_service = Service::GoogleCalendar.from_spreadsheet(google_oauth, @spreadsheet, "Rask")
 
         results = []
         tasks.each do |task|
