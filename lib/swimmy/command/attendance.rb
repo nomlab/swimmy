@@ -8,7 +8,7 @@ module Swimmy
       command 'hi', 'bye' do |client, data, match|
 
         cmd = match[:command]
-        arg = match[:expression]&.strip
+        arg = match[:expression].to_s.split.first
         now = Time.now
         user = client.web_client.users_info(user: data.user).user
 
